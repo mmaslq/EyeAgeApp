@@ -1,47 +1,59 @@
 package com.example.eyeageapp
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.eyeageapp.ui.theme.EyeAgeAppTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val requestNotificationLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted){
+            finishAffinity()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        requestNotificationLauncher.launch(Manifest.permission.CAMERA)
+
         setContent {
             EyeAgeAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val navController = rememberNavController()
+
+                NavHost(
+                    navController = navController,
+                    startDestination = MainScreen.Home.name
+                ){
+                    composable(MainScreen.Home.name){
+                        val menuVM: MenuViewModel = viewModel()
+                        Menu(
+                            menuVM = menuVM,
+                            onTest = {navController.navigate(MainScreen.Test.name)},
+                            onCalibration = {},
+                            onHistory = {}
+                        )
+                    }
+
+                    composable(MainScreen.Test.name){
+                        val testVM: TestViewModel = viewModel()
+                        Test(
+                            testVM = testVM
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    EyeAgeAppTheme {
-        Greeting("Android")
     }
 }
