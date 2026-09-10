@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization) // enables serialization of objects
+    alias(libs.plugins.ksp) // room db
 }
 
 android {
@@ -42,10 +44,12 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -63,4 +67,10 @@ dependencies {
 
     // Official Google ML Kit Face Detection (bundled on-device)
     implementation(libs.face.detection)
+
+    // MediaPipe Tasks Vision (AI do wykrywania punktów twarzy)
+    implementation(libs.tasks.vision)
+
+
+    ksp(libs.androidx.room.compiler) // for room db
 }

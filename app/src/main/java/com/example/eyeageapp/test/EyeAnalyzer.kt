@@ -1,4 +1,4 @@
-package com.example.eyeageapp
+package com.example.eyeageapp.test
 
 import android.graphics.Bitmap
 import android.hardware.camera2.CameraCharacteristics
@@ -6,7 +6,6 @@ import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
@@ -30,7 +29,12 @@ class EyeAnalyzer {
 
     val detector = FaceDetection.getClient(options)
 
-    suspend fun analyzeBitmap(bitmap: Bitmap, rotationDegrees: Int, cameraInfo: CameraInfo): Float = withContext(Dispatchers.Default){
+    suspend fun analyzeBitmap(
+        bitmap: Bitmap,
+        rotationDegrees: Int,
+        cameraInfo: CameraInfo,
+        avgEyeDistance: Float
+    ): Float = withContext(Dispatchers.Default){
 
         val image = InputImage.fromBitmap(bitmap,rotationDegrees)
 
@@ -40,7 +44,7 @@ class EyeAnalyzer {
             detector.process(image)
                 .addOnSuccessListener { faces ->
                     if (continuation.isActive){
-                        val distance = calcFaceDistanceCM(faces, focalLen)
+                        val distance = calcFaceDistanceCM(faces, focalLen, avgEyeDistance)
                         if (distance == null){
                             continuation.resumeWithException(Exception("Something went wrong!"))
                         }else{
@@ -58,7 +62,11 @@ class EyeAnalyzer {
         return@withContext result
     }
 
-    private fun calcFaceDistanceCM(faces: List<Face>, focalLen: Float): Float?{
+    private fun calcFaceDistanceCM(
+        faces: List<Face>,
+        focalLen: Float,
+        avgEyeDistance: Float
+    ): Float?{
         val face = faces.firstOrNull() ?: return null
 
         val leftEye = face.getLandmark(FaceLandmark.LEFT_EYE)?.position ?: return null
@@ -69,7 +77,7 @@ class EyeAnalyzer {
             (rightEye.y - leftEye.y).toDouble()
         ).toFloat()
 
-        val avgEyeDistance = 6.3f
+        //val avgEyeDistance = 6.3f
 
         return avgEyeDistance * (focalLen / eyeDistancePixels)
     }

@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">EyeAgeApp</string>
+    <string name="test_description">
+"• Trzymaj telefon w stałej odległości.
+• Ustal minimalną widoczną wielkość liczb.
+• Wykonaj zdjęcie.
+• Powtórz 3 razy. Nie mruż oczu."
+    </string>
+    <string name="calibration_description">
+"• Otwórz szeroko oczy.
+• Wykonaj zdjęcie tęczówek.
+• Powtórz 3 razy. Nie mruż oczu."
+    </string>
+    <string name="rec_model_path">face_landmarker.task</string>
 </resources>

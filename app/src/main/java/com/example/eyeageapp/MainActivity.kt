@@ -6,13 +6,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.eyeageapp.navigation.MainScreen
+import com.example.eyeageapp.navigation.featureDataScreenGraph
+import com.example.eyeageapp.navigation.featureMainScreenGraph
 import com.example.eyeageapp.ui.theme.EyeAgeAppTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val db by lazy {
+        (application as App).db
+    }
+
 
     private val requestNotificationLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -34,24 +40,17 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = MainScreen.Home.name
+                    startDestination = MainScreen.Home()
                 ){
-                    composable(MainScreen.Home.name){
-                        val menuVM: MenuViewModel = viewModel()
-                        Menu(
-                            menuVM = menuVM,
-                            onTest = {navController.navigate(MainScreen.Test.name)},
-                            onCalibration = {},
-                            onHistory = {}
-                        )
-                    }
-
-                    composable(MainScreen.Test.name){
-                        val testVM: TestViewModel = viewModel()
-                        Test(
-                            testVM = testVM
-                        )
-                    }
+                    featureMainScreenGraph(
+                        navController = navController,
+                        db = db,
+                        appContext = applicationContext
+                    )
+                    featureDataScreenGraph(
+                        navController = navController,
+                        db = db
+                    )
                 }
             }
         }

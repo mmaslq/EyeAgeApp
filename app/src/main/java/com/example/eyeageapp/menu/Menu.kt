@@ -1,4 +1,4 @@
-package com.example.eyeageapp
+package com.example.eyeageapp.menu
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 @Composable
 fun Menu(
     menuVM: MenuViewModel,
-    onTest: () -> Unit,
-    onHistory: () -> Unit,
+    onTest: (Long) -> Unit,
+    onDoneTests: (Long?) -> Unit,
     onCalibration: () -> Unit
 ){
     Column(
@@ -21,18 +21,14 @@ fun Menu(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        if (!menuVM.calibrated){
-            Button(onClick = onCalibration){
-                Text("Kalibracja EAR")
-            }
+        Button(onClick = onCalibration){
+            Text("Kalibracja EAR")
         }
-
-        Button(onClick = onHistory){
+        Button(onClick = {onDoneTests(menuVM.calibratedId)}){
             Text("Moje testy")
         }
-
-        if (menuVM.calibrated){
-            Button(onClick = onTest){
+        menuVM.calibratedId?.let{ id ->
+            Button(onClick = {onTest(id)}){
                 Text("Wykonaj Test")
             }
         }

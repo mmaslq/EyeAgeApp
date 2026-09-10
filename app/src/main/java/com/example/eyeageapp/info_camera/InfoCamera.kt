@@ -1,4 +1,4 @@
-package com.example.eyeageapp
+package com.example.eyeageapp.info_camera
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -14,20 +14,34 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.eyeageapp.R
 
 @Composable
-fun Test(testVM: TestViewModel){
-
+fun InfoCamera(
+    infoCameraVM: InfoCameraViewModel,
+    startWithInfo: Boolean = true,
+    onInfoClick: () -> Unit,
+    onNavigationEvent: ((NavigationEvent) -> Unit) = {},
+    infoContent: @Composable ((Info) -> Unit) = {},
+    insideContent: @Composable () -> Unit = {}
+){
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -42,6 +56,15 @@ fun Test(testVM: TestViewModel){
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (!infoCameraVM.hasRunInitialSetup) {
+            infoCameraVM.onEndInitialSetup()
+            if (startWithInfo){
+                onInfoClick()
+            }
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
     ){
@@ -53,35 +76,62 @@ fun Test(testVM: TestViewModel){
                 }
             }
         )
-        if (testVM.screenDistance != null){
-            Box (
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+
+        insideContent()
+
+        Box (
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.25f),
+            contentAlignment = Alignment.CenterStart
+        ){
+            IconButton (
+                onClick = onInfoClick,
+                modifier = Modifier.padding(25.dp),
             ){
-                Text(text = "Last measured screen distance: ${testVM.screenDistance} cm")
+                Icon(
+                    painter = painterResource(R.drawable.info_24px),
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp)
+                )
             }
         }
+
         Box (
             modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f),
             contentAlignment = Alignment.BottomCenter
         ){
-            if (testVM.errorMessage == null){
-                Button(onClick = {
-                    cameraController.triggerFrameCapture(
-                        context,
-                        {bitmap, rotationDegrees, cameraInfo ->
-                            testVM.analyzeImage(
-                                bitmap,
-                                rotationDegrees,
-                                cameraInfo)
-                        },
-                        {testVM.showErrorMessage(it.message)}
-                    )
-                }){
+            if (infoCameraVM.errorMessage == null){
+                Button(
+                    onClick = {
+                        cameraController.triggerFrameCapture(
+                            context,
+                            {bitmap, rotationDegrees, cameraInfo ->
+                                infoCameraVM.analyzeImage(
+                                    bitmap,
+                                    rotationDegrees,
+                                    cameraInfo)
+                            },
+                            {infoCameraVM.showErrorMessage(it.message)}
+                        )
+                    }
+                ){
                     Text("Analyze Frame")
                 }
             }else{
-                Text(text = testVM.errorMessage!!)
+                Text(text = infoCameraVM.errorMessage!!)
+            }
+        }
+
+        infoCameraVM.infoMessage?.let{ info ->
+            InfoAlertDialog(
+                onSuccess = {infoCameraVM.onInfoClosedSuccess(info,onNavigationEvent)},
+                onDismiss = if (info.action == null){
+                    null
+                } else {
+                    {infoCameraVM.onInfoClosedDismiss()}
+                },
+                title = info.title
+            ){
+                infoContent(info)
             }
         }
     }

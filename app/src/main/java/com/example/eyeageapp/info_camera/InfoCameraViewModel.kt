@@ -1,53 +1,53 @@
-package com.example.eyeageapp
+package com.example.eyeageapp.info_camera
 
 import android.graphics.Bitmap
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.round
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-class TestViewModel: ViewModel() {
+abstract class InfoCameraViewModel: ViewModel() {
+
+    var hasRunInitialSetup = false
+        private set
+
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    var screenDistance by mutableStateOf<Int?>(null)
+    var infoMessage by mutableStateOf<Info?>(null)
         private set
 
-    private val eyeAnalyzer = EyeAnalyzer()
     private var analyzeJob: Job? = null
 
-    fun analyzeImage(bitmap: Bitmap, rotationDegrees: Int, cameraInfo: CameraInfo){
+    internal fun analyzeImage(bitmap: Bitmap, rotationDegrees: Int, cameraInfo: CameraInfo){
 
         if (analyzeJob?.isActive == true){
-            analyzeJob!!.cancel()
-            showErrorMessage("Do NOT Spam Button!")
+            showErrorMessage("Please Wait!")
             return
         }
 
         analyzeJob = viewModelScope.launch {
             try {
-                val distance = eyeAnalyzer.analyzeBitmap(
-                    bitmap,
-                    rotationDegrees,
-                    cameraInfo
-                )
-                screenDistance = round(distance).toInt()
+                onAnalyzingImageJob(bitmap,rotationDegrees,cameraInfo)
             } catch (e: Exception) {
-                if (e is CancellationException) throw e
                 showErrorMessage(e.message)
             }
         }
     }
+
+    abstract suspend fun onAnalyzingImageJob(
+        bitmap: Bitmap,
+        rotationDegrees: Int,
+        cameraInfo: CameraInfo
+    )
+
 
     private var errorJob: Job? = null
 
@@ -68,4 +68,40 @@ class TestViewModel: ViewModel() {
             }
         }
     }
+
+    fun showInfoMessage(
+        message: String,
+        action: (suspend () -> NavigationEvent?)? = null,
+        title: String? = null,
+        extra: Boolean = false
+    ){
+        infoMessage = Info(message,title,action,extra)
+    }
+
+    private fun hideInfoMessage(){
+        infoMessage = null
+    }
+
+    fun onInfoClosedSuccess(
+        info: Info,
+        onNavigationEvent: ((NavigationEvent) -> Unit) = {}
+    ){
+        hideInfoMessage()
+        viewModelScope.launch {
+            val navEvent = info.action?.invoke()
+
+            navEvent?.let{
+                onNavigationEvent(it)
+            }
+        }
+    }
+
+    fun onInfoClosedDismiss(){
+        hideInfoMessage()
+    }
+
+    fun onEndInitialSetup(){
+        hasRunInitialSetup = true
+    }
+
 }
